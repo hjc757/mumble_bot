@@ -1049,23 +1049,86 @@ def cmd_user_password(bot, user, text, command, parameter):
     bot.send_msg(tr('user_password_set'), text)
 
 
+RADIO_INI = "/root/radio/radio.ini"
+RADIO_SVC = "radio-bot"
+
+
+def _music_to_radio_enabled():
+    """读 radio.ini：ignore_users 生效（未注释）说明音乐不上电台"""
+    try:
+        for line in open(RADIO_INI, encoding="utf-8"):
+            s = line.strip()
+            if s.startswith("#"):
+                continue
+            if s.replace(" ", "").startswith("ignore_users="):
+                names = s.split("=", 1)[1].replace(" ", "")
+                return not ("BOT" in [n.upper() for n in names.split(",") if n])
+    except Exception:
+        pass
+    return True
+
+
+def _set_music_to_radio(enable):
+    """enable=True 让音乐上电台（注释 ignore_users）；False 只在 Mumble 里听（取消注释）"""
+    lines = open(RADIO_INI, encoding="utf-8").read().split("\n")
+    done = False
+    for i, line in enumerate(lines):
+        s = line.strip()
+        body = s.lstrip("#").strip()
+        if body.replace(" ", "").startswith("ignore_users="):
+            if enable:
+                lines[i] = "#" + body          # 注释掉＝不再过滤 BOT
+            else:
+                lines[i] = body                # 生效＝过滤 BOT
+            done = True
+            break
+    if not done and not enable:                # 整行被删了就补回来
+        lines.append("ignore_users = BOT")
+    open(RADIO_INI, "w", encoding="utf-8").write("\n".join(lines))
+    import subprocess
+    subprocess.run(["systemctl", "restart", RADIO_SVC], capture_output=True)
+    return True
+
+
 def cmd_bridge(bot, user, text, command, parameter):
-    """控制电台桥：,bot on / off / status"""
+    """控制电台桥：,bot on / off / status / music on / music off"""
     import subprocess
     action = (parameter or "").strip().lower()
-    svc = "radio-bot"
+    svc = RADIO_SVC
     sym = var.config.get('commands', 'command_symbol')[0]
+    usage = "用法：%sbot on | %sbot off | %sbot status | %sbot music on（音乐上电台）| %sbot music off（音乐只在手机里听）" \
+            % (sym, sym, sym, sym, sym)
+
+    parts = action.replace("，", ",").split()
+    if parts and parts[0] in ("music", "音乐", "feed"):
+        sub = parts[1] if len(parts) > 1 else "status"
+        if sub in ("on", "start", "开", "启动", "上", "上电台"):
+            _set_music_to_radio(True)
+            bot.send_msg("已允许音乐上电台（桥已重启）。注意：播放期间电台 PTT 一直被占用。", text)
+            return
+        if sub in ("off", "stop", "关", "停止", "不上"):
+            _set_music_to_radio(False)
+            bot.send_msg("已改为音乐只在手机里听（桥已重启），电台只转发人声。", text)
+            return
+        if sub in ("status", "state", "状态"):
+            bot.send_msg("音乐上电台：%s" % ("已允许" if _music_to_radio_enabled() else "已禁止"), text)
+            return
+        bot.send_msg(usage, text)
+        return
+
     if action in ("on", "start", "开", "启动"):
         subprocess.run(["systemctl", "start", svc], capture_output=True)
     elif action in ("off", "stop", "关", "停止"):
         subprocess.run(["systemctl", "stop", svc], capture_output=True)
     elif action not in ("", "status", "state", "状态"):
-        bot.send_msg("用法：%sbot on | %sbot off | %sbot status" % (sym, sym, sym), text)
+        bot.send_msg(usage, text)
         return
     state = subprocess.run(["systemctl", "is-active", svc], capture_output=True, text=True).stdout.strip()
     boot = subprocess.run(["systemctl", "is-enabled", svc], capture_output=True, text=True).stdout.strip()
     phrase = {"active": "运行中", "inactive": "未运行", "failed": "启动失败"}.get(state, state)
-    bot.send_msg("电台桥：%s（开机自启：%s）" % (phrase, "是" if boot == "enabled" else "否"), text)
+    bot.send_msg("电台桥：%s（开机自启：%s）｜音乐上电台：%s"
+                 % (phrase, "是" if boot == "enabled" else "否",
+                    "已允许" if _music_to_radio_enabled() else "已禁止"), text)
 
 
 def cmd_version(bot, user, text, command, parameter):

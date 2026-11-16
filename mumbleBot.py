@@ -365,11 +365,10 @@ class MumbleBot:
 
     @staticmethod
     def is_admin(user):
-        list_admin = var.config.get('bot', 'admin').rstrip().split(';')
-        if user in list_admin:
-            return True
-        else:
-            return False
+        # 管理员名单不区分大小写、忽略空格，例：admin = vivo;pc; => 用户 "PC" 也算管理员
+        raw = var.config.get('bot', 'admin') or ''
+        list_admin = [x.strip().lower() for x in raw.split(';') if x.strip()]
+        return (user or '').strip().lower() in list_admin
 
     # =======================
     #   Other Mumble Events
