@@ -2,7 +2,7 @@
     "cli": {
         "added_tags": "已将标签 <i>{tags}</i> 添加到 <b>{song}</b>。",
         "added_tags_to_all": "已将标签 <i>{tags}</i> 添加到播放列表的所有曲目中。",
-        "admin_help": "<h3>管理员命令（前缀“，”）</h3>\n<b>电台桥</b>\n<ul>\n<li><b>,bot on</b> - 启动电台桥（radio-bridge）。</li>\n<li><b>,bot off</b> - 停止电台桥。</li>\n<li><b>,bot status</b> - 查看电台桥状态。</li>\n</ul>\n<b>机器人管理</b>\n<ul>\n<li><b>,<u>k</u>ill </b> - 退出机器人。</li>\n<li><b>,update </b> - 自动更新至新版本。</li>\n<li><b>,userban </b> {user} - 封禁用户。</li>\n<li><b>,userunban </b> {user} - 解除封禁。</li>\n<li><b>,urlbanlist </b> - 列出全部被封禁的链接。</li>\n<li><b>,urlban </b> [{url}] - 封禁链接 {url} 并将它从音乐库移除。</li>\n<li><b>,urlunban </b> {url} - 解除封禁链接 {url}。</li>\n<li><b>,rescan </b> {url} - 更新本地音乐库。</li>\n</ul>",
+        "admin_help": "<h3>管理员命令（前缀“，”）</h3>\n<b>电台桥</b>\n<ul>\n<li><b>,bot on</b> - 启动电台桥（radio-bot）。</li>\n<li><b>,bot off</b> - 停止电台桥。</li>\n<li><b>,bot status</b> - 查看电台桥状态。</li>\n</ul>\n<b>机器人管理</b>\n<ul>\n<li><b>,<u>k</u>ill </b> - 退出机器人。</li>\n<li><b>,update </b> - 自动更新至新版本。</li>\n<li><b>,userban </b> {user} - 封禁用户。</li>\n<li><b>,userunban </b> {user} - 解除封禁。</li>\n<li><b>,urlbanlist </b> - 列出全部被封禁的链接。</li>\n<li><b>,urlban </b> [{url}] - 封禁链接 {url} 并将它从音乐库移除。</li>\n<li><b>,urlunban </b> {url} - 解除封禁链接 {url}。</li>\n<li><b>,rescan </b> {url} - 更新本地音乐库。</li>\n</ul>",
         "auto_paused": "已暂停。若要继续播放，请发送 <i>,play</i> 。",
         "bad_command": "{{command}}: 未知命令。请发送<i>,help</i>获取命令列表。",
         "bad_parameter": "{command}: 无效参数！",
