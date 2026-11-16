@@ -1,0 +1,8 @@
+flask
+yt-dlp
+python-magic
+Pillow
+mutagen
+requests
+packaging
+pymumble>=1.2
