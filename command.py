@@ -1,14 +1,11 @@
 # coding=utf-8
 import logging
-import secrets
-import datetime
 import json
 import re
 import pymumble_py3 as pymumble
 
 from constants import tr_cli as tr
 from constants import commands
-import interface
 import util
 import variables as var
 from database import SettingsDatabase, MusicDatabase, Condition
@@ -26,7 +23,7 @@ def register_all_commands(bot):
     bot.register_command(commands('change_user_password'), cmd_user_password, no_partial_match=True)
     bot.register_command(commands('clear'), cmd_clear)
     bot.register_command(commands('current_music'), cmd_current_music)
-    bot.register_command(commands('delete_from_library'), cmd_delete_from_library)
+    # 已按要求移除删除类命令：bot.register_command(commands('delete_from_library'), cmd_delete_from_library)
     bot.register_command(commands('ducking'), cmd_ducking)
     bot.register_command(commands('ducking_threshold'), cmd_ducking_threshold)
     bot.register_command(commands('ducking_volume'), cmd_ducking_volume)
@@ -45,9 +42,8 @@ def register_all_commands(bot):
     bot.register_command(commands('queue'), cmd_queue)
     bot.register_command(commands('random'), cmd_random)
     bot.register_command(commands('remove'), cmd_remove)
-    bot.register_command(commands('remove_tag'), cmd_remove_tag)
+    # 已按要求移除删除类命令：bot.register_command(commands('remove_tag'), cmd_remove_tag)
     bot.register_command(commands('repeat'), cmd_repeat)
-    bot.register_command(commands('requests_webinterface_access'), cmd_web_access)
     bot.register_command(commands('rescan'), cmd_refresh_cache, no_partial_match=True)
     bot.register_command(commands('search'), cmd_search_library)
     bot.register_command(commands('skip'), cmd_skip)
@@ -57,11 +53,9 @@ def register_all_commands(bot):
     bot.register_command(commands('volume'), cmd_volume)
 
     # admin command
-    bot.register_command(commands('add_webinterface_user'), cmd_web_user_add, admin=True)
-    bot.register_command(commands('drop_database'), cmd_drop_database, no_partial_match=True, admin=True)
+    # 已按要求移除删除类命令：bot.register_command(commands('drop_database'), cmd_drop_database, no_partial_match=True, admin=True)
     bot.register_command(commands('kill'), cmd_kill, admin=True)
-    bot.register_command(commands('list_webinterface_user'), cmd_web_user_list, admin=True)
-    bot.register_command(commands('remove_webinterface_user'), cmd_web_user_remove, admin=True)
+    bot.register_command(commands('bot'), cmd_bridge, admin=True)
     bot.register_command(commands('max_volume'), cmd_max_volume, admin=True)
     bot.register_command(commands('update'), cmd_update, no_partial_match=True, admin=True)
     bot.register_command(commands('url_ban'), cmd_url_ban, no_partial_match=True, admin=True)
@@ -1041,32 +1035,6 @@ def cmd_refresh_cache(bot, user, text, command, parameter):
         bot.mumble.users[text.actor].send_text_message(tr('not_admin'))
 
 
-def cmd_web_access(bot, user, text, command, parameter):
-    auth_method = var.config.get("webinterface", "auth_method")
-
-    if auth_method == 'token':
-        interface.banned_ip = []
-        interface.bad_access_count = {}
-
-        user_info = var.db.get("user", user, fallback='{}')
-        user_dict = json.loads(user_info)
-        if 'token' in user_dict:
-            var.db.remove_option("web_token", user_dict['token'])
-
-        token = secrets.token_urlsafe(5)
-        user_dict['token'] = token
-        user_dict['token_created'] = str(datetime.datetime.now())
-        user_dict['last_ip'] = ''
-        var.db.set("web_token", token, user)
-        var.db.set("user", user, json.dumps(user_dict))
-
-        access_address = var.config.get("webinterface", "access_address") + "/?token=" + token
-    else:
-        access_address = var.config.get("webinterface", "access_address")
-
-    bot.send_msg(tr('webpage_address', address=access_address), text)
-
-
 def cmd_user_password(bot, user, text, command, parameter):
     if not parameter:
         bot.send_msg(tr('bad_parameter', command=command), text)
@@ -1081,48 +1049,23 @@ def cmd_user_password(bot, user, text, command, parameter):
     bot.send_msg(tr('user_password_set'), text)
 
 
-def cmd_web_user_add(bot, user, text, command, parameter):
-    if not parameter:
-        bot.send_msg(tr('bad_parameter', command=command), text)
+def cmd_bridge(bot, user, text, command, parameter):
+    """控制电台桥：,bot on / off / status"""
+    import subprocess
+    action = (parameter or "").strip().lower()
+    svc = "radio-bridge"
+    sym = var.config.get('commands', 'command_symbol')[0]
+    if action in ("on", "start", "开", "启动"):
+        subprocess.run(["systemctl", "start", svc], capture_output=True)
+    elif action in ("off", "stop", "关", "停止"):
+        subprocess.run(["systemctl", "stop", svc], capture_output=True)
+    elif action not in ("", "status", "state", "状态"):
+        bot.send_msg("用法：%sbot on | %sbot off | %sbot status" % (sym, sym, sym), text)
         return
-
-    auth_method = var.config.get("webinterface", "auth_method")
-
-    if auth_method == 'password':
-        web_users = json.loads(var.db.get("privilege", "web_access", fallback='[]'))
-        if parameter not in web_users:
-            web_users.append(parameter)
-        var.db.set("privilege", "web_access", json.dumps(web_users))
-        bot.send_msg(tr('web_user_list', users=", ".join(web_users)), text)
-    else:
-        bot.send_msg(tr('command_disabled', command=command), text)
-
-
-def cmd_web_user_remove(bot, user, text, command, parameter):
-    if not parameter:
-        bot.send_msg(tr('bad_parameter', command=command), text)
-        return
-
-    auth_method = var.config.get("webinterface", "auth_method")
-
-    if auth_method == 'password':
-        web_users = json.loads(var.db.get("privilege", "web_access", fallback='[]'))
-        if parameter in web_users:
-            web_users.remove(parameter)
-        var.db.set("privilege", "web_access", json.dumps(web_users))
-        bot.send_msg(tr('web_user_list', users=", ".join(web_users)), text)
-    else:
-        bot.send_msg(tr('command_disabled', command=command), text)
-
-
-def cmd_web_user_list(bot, user, text, command, parameter):
-    auth_method = var.config.get("webinterface", "auth_method")
-
-    if auth_method == 'password':
-        web_users = json.loads(var.db.get("privilege", "web_access", fallback='[]'))
-        bot.send_msg(tr('web_user_list', users=", ".join(web_users)), text)
-    else:
-        bot.send_msg(tr('command_disabled', command=command), text)
+    state = subprocess.run(["systemctl", "is-active", svc], capture_output=True, text=True).stdout.strip()
+    boot = subprocess.run(["systemctl", "is-enabled", svc], capture_output=True, text=True).stdout.strip()
+    phrase = {"active": "运行中", "inactive": "未运行", "failed": "启动失败"}.get(state, state)
+    bot.send_msg("电台桥：%s（开机自启：%s）" % (phrase, "是" if boot == "enabled" else "否"), text)
 
 
 def cmd_version(bot, user, text, command, parameter):
