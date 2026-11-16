@@ -48,8 +48,6 @@ class MumbleBot:
             self.channel = var.config.get("server", "channel")
 
         var.user = args.user
-        var.is_proxified = var.config.getboolean(
-            "webinterface", "is_web_proxified")
 
         # Flags to indicate the bot is exiting (Ctrl-C, or !kill)
         self.exit = False
@@ -753,26 +751,6 @@ class MumbleBot:
         self.pause_at_id = ""
 
 
-def start_web_interface(addr, port):
-    global formatter
-    import interface
-
-    # setup logger
-    werkzeug_logger = logging.getLogger('werkzeug')
-    logfile = util.solve_filepath(var.config.get('webinterface', 'web_logfile'))
-    if logfile:
-        handler = logging.handlers.RotatingFileHandler(logfile, mode='a', maxBytes=10240, backupCount=3)  # Rotate after 10KB, leave 3 old logs
-    else:
-        handler = logging.StreamHandler()
-
-    werkzeug_logger.addHandler(handler)
-
-    interface.init_proxy()
-    interface.web.env = 'development'
-    interface.web.secret_key = var.config.get('webinterface', 'flask_secret')
-    interface.web.run(port=port, host=addr)
-
-
 if __name__ == '__main__':
     supported_languages = util.get_supported_language()
 
@@ -949,18 +927,6 @@ if __name__ == '__main__':
     if var.config.getboolean('bot', 'save_playlist'):
         var.bot_logger.info("bot: load playlist from previous session")
         var.playlist.load()
-
-    # ============================
-    #   Start the web interface
-    # ============================
-    if var.config.getboolean("webinterface", "enabled"):
-        wi_addr = var.config.get("webinterface", "listening_addr")
-        wi_port = var.config.getint("webinterface", "listening_port")
-        tt = threading.Thread(
-            target=start_web_interface, name="WebThread", args=(wi_addr, wi_port))
-        tt.daemon = True
-        bot_logger.info('Starting web interface on {}:{}'.format(wi_addr, wi_port))
-        tt.start()
 
     # Start the main loop.
     var.bot.loop()
