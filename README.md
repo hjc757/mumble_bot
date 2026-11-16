@@ -19,20 +19,24 @@
 
 ## 依赖
 
-- Python 3.6 及以上；
+- Python 3.10 及以上；
 - `ffmpeg`（用于拉流与转码）；
 - Opus 编解码库：`apt install libopus0`；
-- `libmagic`：`apt install libmagic1`（或安装 `python-magic-bin`）。
+- `libmagic`：`apt install libmagic1`（或安装 `python-magic-bin`）；
+- `git`（安装 pymumble 时需要，从 GitHub 直接拉取）。
 
 ## 安装（源码方式）
 
 ```bash
-git clone <本仓库地址> mumble_bot
+git clone https://github.com/hjc757/mumble_bot.git
 cd mumble_bot
 python3 -m venv venv
 venv/bin/pip install wheel
 venv/bin/pip install -r requirements.txt
 ```
+
+依赖中的 pymumble 取自 [hjc757/pymumble](https://github.com/hjc757/pymumble)：支持 Mumble 1.3~1.6 协议与 TLS 1.2。
+PyPI 上的 `pymumble` 1.6.1 仅支持 Mumble 1.2，且依赖 Python 3.12 已移除的 `ssl.wrap_socket`，**不要使用**。
 
 前端资源若需重新构建：
 

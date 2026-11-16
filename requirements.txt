@@ -5,4 +5,6 @@ Pillow
 mutagen
 requests
 packaging
-pymumble>=1.2
+# pymumble_py3：Mumble 1.3~1.6 协议、TLS 1.2、Python 3.10+（含 CM108 GPIO PTT）
+# PyPI 上的 pymumble 1.6.1 仅支持 Mumble 1.2，且使用 Python 3.12 已移除的 ssl.wrap_socket，不要使用
+pymumble @ git+https://github.com/hjc757/pymumble.git@master
