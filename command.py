@@ -1053,7 +1053,7 @@ def cmd_bridge(bot, user, text, command, parameter):
     """控制电台桥：,bot on / off / status"""
     import subprocess
     action = (parameter or "").strip().lower()
-    svc = "radio-bridge"
+    svc = "radio-bot"
     sym = var.config.get('commands', 'command_symbol')[0]
     if action in ("on", "start", "开", "启动"):
         subprocess.run(["systemctl", "start", svc], capture_output=True)
